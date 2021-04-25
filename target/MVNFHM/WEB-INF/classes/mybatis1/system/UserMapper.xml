@@ -1,0 +1,625 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="UserMapper">
+
+	<resultMap type="User" id="userAndRoleResultMap">
+		<id column="USER_ID" property="USER_ID"/>
+		<result column="USERNAME" property="USERNAME"/>
+		<result column="PASSWORD" property="PASSWORD"/>
+		<result column="NAME" property="NAME"/>
+		<result column="RIGHTS" property="RIGHTS"/>
+		<result column="LAST_LOGIN" property="LAST_LOGIN"/>
+		<result column="IP" property="IP"/>
+		<result column="STATUS" property="STATUS"/>
+		<result column="SKIN" property="SKIN"/>
+		<result column="IS_PLACE_TOP" property="IS_PLACE_TOP"/>
+		<result column="SORT_LEVEL" property="SORT_LEVEL"/>
+		<result column="HEAD_PIN_YIN" property="HEAD_PIN_YIN"/>
+		<association property="role" column="ROLE_ID" javaType="Role">
+			<id column="ROLE_ID" property="ROLE_ID"/>
+			<result column="ROLE_NAME" property="ROLE_NAME"/>
+			<result column="ROLE_RIGHTS" property="RIGHTS"/>
+		</association>
+	</resultMap>
+	<resultMap type="User" id="userResultMap">
+		<id column="USER_ID" property="USER_ID"/>
+		<result column="USERNAME" property="USERNAME"/>
+		<result column="PASSWORD" property="PASSWORD"/>
+		<result column="NAME" property="NAME"/>
+		<result column="RIGHTS" property="RIGHTS"/>
+		<result column="LAST_LOGIN" property="LAST_LOGIN"/>
+		<result column="IP" property="IP"/>
+		<result column="STATUS" property="STATUS"/>
+		<result column="ROLE_ID" property="ROLE_ID"/>
+		<result column="SKIN" property="SKIN"/>
+		<result column="IS_PLACE_TOP" property="IS_PLACE_TOP"/>
+		<result column="SORT_LEVEL" property="SORT_LEVEL"/>
+		<result column="HEAD_PIN_YIN" property="HEAD_PIN_YIN"/>
+	</resultMap>
+	
+	<!--表名 -->
+	<sql id="tableName">
+		SYS_USER
+	</sql>
+	<sql id="roleTableName">
+		SYS_ROLE
+	</sql>
+	<sql id="staffTableName">
+		OA_STAFF
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		USER_ID,
+		USERNAME,
+		PASSWORD,
+		NAME,
+		RIGHTS,
+		ROLE_ID,
+		LAST_LOGIN,
+		IP,
+		STATUS,
+		BZ,
+		SKIN,
+		EMAIL,
+		NUMBER,
+		PHONE,
+		CITY,
+		FAX,
+		SEX,
+		BIRTHDAY,
+		ID_CARD,
+		HEAD_PATH,
+		JOB_STATE,
+		TEL,
+		WEIXIN,
+		ADDRESS,
+		DEPARTMENT_ID,
+		POST_ID,
+		COMPANY_ID,
+		CREATE_TIME,
+		UPDATE_TIME,
+		USERID,
+		IS_VALUE,
+		PINYIN,
+		IS_PLACE_TOP,
+		SORT_LEVEL ,
+		HEAD_PIN_YIN
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{USER_ID},
+		#{USERNAME},
+		#{PASSWORD},
+		#{NAME},
+		#{RIGHTS},
+		#{ROLE_ID},
+		#{LAST_LOGIN},
+		#{IP},
+		#{STATUS},
+		#{BZ},
+		#{SKIN},
+		#{EMAIL},
+		#{NUMBER},
+		#{PHONE},
+		#{CITY},
+		#{FAX},
+		#{SEX},
+		#{BIRTHDAY},
+		#{ID_CARD},
+		#{HEAD_PATH},
+		#{JOB_STATE},
+		#{TEL},
+		#{WEIXIN},
+		#{ADDRESS},
+		#{DEPARTMENT_ID},
+		#{POST_ID},
+		#{COMPANY_ID},
+		#{CREATE_TIME},
+		#{UPDATE_TIME},
+		#{USERID},
+		#{IS_VALUE},
+		#{PINYIN},
+		#{IS_PLACE_TOP},
+		#{SORT_LEVEL},
+		#{HEAD_PIN_YIN}
+	</sql>
+	
+	<!-- 判断用户名和密码 -->
+	<select id="getUserInfo" parameterType="pd" resultType="pd">
+		select <include refid="Field"></include> from
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="USERNAME!=null and PASSWORD!=null">
+		and USERNAME = #{USERNAME} and PASSWORD=#{PASSWORD}
+		</if>
+		<if test="USER_ID!=null and USER_ID>0">
+		and USER_ID = #{USER_ID}
+		</if>
+	</select>
+	
+	<!-- 判断APP用户名和密码 -->
+	<select id="getAppUserByNameAndPwd" parameterType="pd" resultType="pd">
+		select <include refid="Field"></include>,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.POST_ID) AS POST_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.DEPARTMENT_ID) AS DEPARTMENT_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.COMPANY_ID) AS COMPANY_NAME
+			from <include refid="tableName"></include> u
+		where 1=1
+		<if test="USERNAME!=null and PASSWORD!=null">
+		and USERNAME = #{USERNAME} and PASSWORD=#{PASSWORD}
+		</if>
+	</select>
+	
+	<select id="findUserByCompanyId" parameterType="pd" resultType="pd">
+		SELECT <include refid="Field"></include>,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.POST_ID) AS POST_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.DEPARTMENT_ID) AS DEPARTMENT_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.COMPANY_ID) AS COMPANY_NAME
+			 from sys_user u WHERE USER_ID IN (SELECT USER_ID from oa_companydepartmentpostuser WHERE COMPANY_ID = #{COMPANY_ID})
+				<if test="USERNAME!=null and USERNAME!=''">
+				AND (NAME like '%${USERNAME}%' OR PINYIN like '%${USERNAME}%' OR USERNAME like '%${USERNAME}%')
+				</if>
+		 order by HEAD_PIN_YIN asc
+	</select>
+	
+	<select id="findUserByTopCompany" parameterType="pd" resultType="pd">
+		SELECT <include refid="Field"></include>,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.POST_ID) AS POST_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.DEPARTMENT_ID) AS DEPARTMENT_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.COMPANY_ID) AS COMPANY_NAME
+			 from sys_user u WHERE USER_ID IN (SELECT USER_ID from oa_companydepartmentpostuser)
+				<if test="USERNAME!=null and USERNAME!=''">
+				AND (NAME like '%${USERNAME}%' OR PINYIN like '%${USERNAME}%' OR USERNAME like '%${USERNAME}%')
+				</if>
+		 order by HEAD_PIN_YIN asc
+	</select>
+	
+	<select id="findUserByDepartmentId" parameterType="pd" resultType="pd">
+		SELECT <include refid="Field"></include>,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.POST_ID) AS POST_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.DEPARTMENT_ID) AS DEPARTMENT_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.COMPANY_ID) AS COMPANY_NAME
+			 from sys_user u WHERE USER_ID IN (SELECT USER_ID from oa_companydepartmentpostuser WHERE DEPARTMENT_ID = #{DEPARTMENT_ID})
+				<if test="USERNAME!=null and USERNAME!=''">
+				AND (NAME like '%${USERNAME}%' OR PINYIN like '%${USERNAME}%' OR USERNAME like '%${USERNAME}%')
+				</if>
+		 order by HEAD_PIN_YIN asc 
+	</select>
+	
+	<select id="findUserByPostId" parameterType="pd" resultType="pd">
+		SELECT <include refid="Field"></include>,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.POST_ID) AS POST_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.DEPARTMENT_ID) AS DEPARTMENT_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.COMPANY_ID) AS COMPANY_NAME
+			 from sys_user u WHERE USER_ID IN (SELECT USER_ID from oa_companydepartmentpostuser WHERE POST_ID = #{POST_ID})
+				<if test="USERNAME!=null and USERNAME!=''">
+				AND (NAME like '%${USERNAME}%' OR PINYIN like '%${USERNAME}%' OR USERNAME like '%${USERNAME}%')
+				</if>
+		 order by HEAD_PIN_YIN asc
+	</select>
+	
+	<!-- 更新登录时间 -->
+	<update id="updateLastLogin" parameterType="pd" >
+		update
+		<include refid="tableName"></include>
+		set 
+		LAST_LOGIN = #{LAST_LOGIN} 
+		where USER_ID = #{USER_ID}
+	</update>
+	
+	<!-- 通过用户ID获取用户信息和角色信息 -->
+	<select id="getUserAndRoleById" parameterType="String" resultMap="userAndRoleResultMap">
+		select  u.USER_ID,
+				u.USERNAME,
+				u.NAME,
+				u.RIGHTS as USER_RIGHTS,
+				u.PASSWORD,
+				u.SKIN,
+				r.ROLE_ID,
+				r.ROLE_NAME,
+				r.RIGHTS as ROLE_RIGHTS 
+		from 
+		<include refid="tableName"></include> u 
+		left join 
+		<include refid="roleTableName"></include> r 
+		on u.ROLE_ID=r.ROLE_ID 
+		where u.STATUS=0 
+		and u.USER_ID=#{USER_ID}
+	</select>
+	
+	<!-- 通过USERNAME获取数据 -->
+	<select id="findByUsername" parameterType="pd" resultType="pd" >
+		select 
+			<include refid="Field"></include>
+		from 
+			<include refid="tableName"></include>
+		where 
+			USERNAME = #{USERNAME}
+	</select>
+	
+	<select id="findByUsernamePo" parameterType="com.fh.entity.system.User" resultType="pd" >
+		select 
+			<include refid="Field"></include>
+		from 
+			<include refid="tableName"></include>
+		where 
+			USERNAME = #{USERNAME}
+	</select>
+	
+	<!-- 存入IP -->
+	<update id="saveIP" parameterType="pd" >
+		update 
+		<include refid="tableName"></include> 
+		set 
+			IP = #{IP}
+		where 
+			USERNAME = #{USERNAME}
+	</update>
+	
+	<!-- 列出某角色下的所有用户 -->
+	<select id="listAllUserByRoldId"  parameterType="pd" resultType="pd" >
+		select USER_ID
+		from 
+		<include refid="tableName"></include>
+		where 
+		ROLE_ID = #{ROLE_ID}
+	</select>
+	
+	<select id="listUsers"  parameterType="pd" resultType="pd" >
+		select USER_ID,USERNAME
+			from <include refid="tableName"></include>
+				where IS_VALUE = 0 
+					AND USERNAME != 'admin'
+					<if test="keywords!= null and keywords != ''">
+						 AND USERNAME like '%${keywords}%'
+					</if>
+	</select>
+	
+	<!-- 用户列表 -->
+	<select id="userlistPage" parameterType="page" resultType="pd" >
+		select  u.USER_ID,
+				u.USERNAME,
+				u.PASSWORD,
+				u.LAST_LOGIN,
+				u.NAME,
+				u.IP,
+				u.EMAIL,
+				u.NUMBER,
+				u.PHONE,
+				u.TEL,
+				u.HEAD_PATH,
+				if(isnull(u.SORT_LEVEL),100,u.SORT_LEVEL) as SORT_LEVEL,
+				r.ROLE_ID,
+				r.ROLE_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.DEPARTMENT_ID) AS DEPARTMENT_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.COMPANY_ID) AS COMPANY_NAME,
+		(select BIANMA from oa_department d where d.DEPARTMENT_ID = u.DEPARTMENT_ID) AS BIANMA
+		from 
+		   SYS_USER u, 
+		   SYS_ROLE r 
+		where u.ROLE_ID = r.ROLE_ID 
+		and u.USERNAME != 'admin'
+		and u.IS_VALUE != 1 
+		and r.PARENT_ID = '1'
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and u.USERNAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				<!-- (
+					 u.USERNAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					 u.EMAIL LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') 
+					 or
+					 u.NUMBER LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or
+					 u.NAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or
+					 u.PHONE LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				) -->
+		</if>
+		<if test="pd.ROLE_ID != null and pd.ROLE_ID != ''"><!-- 角色检索 -->
+			and u.ROLE_ID=#{pd.ROLE_ID} 
+		</if>
+		<if test="pd.lastLoginStart!=null and pd.lastLoginStart!=''"><!-- 登录时间检索 -->
+			and u.LAST_LOGIN &gt;= #{pd.lastLoginStart} 
+		</if>
+		<if test="pd.lastLoginEnd!=null and pd.lastLoginEnd!=''"><!-- 登录时间检索 -->
+			and u.LAST_LOGIN &lt;= #{pd.lastLoginEnd} 
+		</if>
+		<if test="pd.DEPARTMENT_ID!=null and pd.DEPARTMENT_ID!=''"><!-- 部门检索 -->
+		    <if test="pd.item!=null and pd.item!=''">
+			   and u.DEPARTMENT_ID in ${pd.item}
+			</if>
+		</if>
+		order by BIANMA ,SORT_LEVEL
+	</select>
+	
+	<!-- 用户列表(弹窗选择用) -->
+	<select id="userBystafflistPage" parameterType="page" resultType="pd" >
+		select  u.USER_ID,
+				u.USERNAME,
+				u.PASSWORD,
+				u.LAST_LOGIN,
+				u.NAME,
+				u.IP,
+				u.EMAIL,
+				u.NUMBER,
+				u.PHONE,
+				r.ROLE_ID,
+				r.ROLE_NAME
+		from <include refid="tableName"></include> u, <include refid="roleTableName"></include> r 
+		where u.ROLE_ID = r.ROLE_ID 
+		and u.USERNAME != 'admin'
+		and r.PARENT_ID = '1'
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					 u.USERNAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					 u.EMAIL LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') 
+					 or
+					 u.NUMBER LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or
+					 u.NAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or
+					 u.PHONE LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+		<if test="pd.ROLE_ID != null and pd.ROLE_ID != ''"><!-- 角色检索 -->
+			and u.ROLE_ID=#{pd.ROLE_ID} 
+		</if>
+		<if test="pd.lastLoginStart!=null and pd.lastLoginStart!=''"><!-- 登录时间检索 -->
+			and u.LAST_LOGIN &gt;= #{pd.lastLoginStart} 
+		</if>
+		<if test="pd.lastLoginEnd!=null and pd.lastLoginEnd!=''"><!-- 登录时间检索 -->
+			and u.LAST_LOGIN &lt;= #{pd.lastLoginEnd} 
+		</if>
+		and u.USERNAME not in (select s.USER_ID from <include refid="staffTableName"></include> s where s.USER_ID !='')
+		order by u.LAST_LOGIN desc
+	</select>
+	
+	<!-- 通过邮箱获取数据 -->
+	<select id="findByUE" parameterType="pd" resultType="pd" >
+		select 
+			<include refid="Field"></include>
+		from 
+			<include refid="tableName"></include>
+		where 
+			EMAIL = #{EMAIL}
+		<if test="USERNAME != null and USERNAME != ''">
+			and USERNAME != #{USERNAME} 
+		</if>
+	</select>
+	
+	<!-- 通过手机号获取数据 -->
+	<select id="findByUP" parameterType="pd" resultType="pd" >
+		select 
+			<include refid="Field"></include>
+		from 
+			<include refid="tableName"></include>
+		where 
+			PHONE = #{PHONE}
+		<if test="USERNAME != null and USERNAME != ''">
+			and USERNAME != #{USERNAME} 
+		</if>
+	</select>
+	
+	<!-- 通过编号获取数据 -->
+	<select id="findByUN" parameterType="pd" resultType="pd" >
+		select 
+			<include refid="Field"></include>
+		from 
+			<include refid="tableName"></include>
+		where 
+			NUMBER = #{NUMBER}
+		<if test="USERNAME != null and USERNAME != ''">
+			and USERNAME != #{USERNAME} 
+		</if>
+	</select>
+	
+	<!-- 通过user_id获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd" >
+		select 
+			<include refid="Field"></include>
+		from 
+			<include refid="tableName"></include>
+		where 
+			USER_ID = #{USER_ID}
+	</select>
+	
+	<select id="findByIdPo" parameterType="pd" resultType="com.fh.entity.system.User" >
+		select 
+			<include refid="Field"></include>,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.POST_ID) AS POST_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.DEPARTMENT_ID) AS DEPARTMENT_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.COMPANY_ID) AS COMPANY_NAME
+		from 
+			<include refid="tableName"></include> u
+		where 
+			USER_ID = #{USER_ID}
+	</select>
+	
+	<!-- 新增用户 -->
+	<insert id="saveU" parameterType="pd" >
+		insert into <include refid="tableName"></include> (
+			<include refid="Field"></include>
+		) values (
+			<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<insert id="saveUPo" parameterType="com.fh.entity.system.User" >
+		insert into <include refid="tableName"></include> (
+			<include refid="Field"></include>
+		) values (
+			<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 修改 -->
+	<update id="editU" parameterType="pd" >
+		update  <include refid="tableName"></include>
+			set NAME 					= #{NAME},
+				ROLE_ID 				= #{ROLE_ID},
+				BZ						= #{BZ},
+				EMAIL					= #{EMAIL},
+				NUMBER					= #{NUMBER},
+				PHONE					= #{PHONE},
+				CITY = #{CITY},
+				FAX = #{FAX},
+				SEX = #{SEX},
+				BIRTHDAY = #{BIRTHDAY},
+				ID_CARD = #{ID_CARD},
+				HEAD_PATH = #{HEAD_PATH},
+				JOB_STATE = #{JOB_STATE},
+				TEL = #{TEL},
+				WEIXIN = #{WEIXIN},
+				ADDRESS = #{ADDRESS},
+				DEPARTMENT_ID = #{DEPARTMENT_ID},
+				POST_ID = #{POST_ID},
+				COMPANY_ID = #{COMPANY_ID},
+				UPDATE_TIME = #{UPDATE_TIME},
+				USERID = #{USERID},
+				PINYIN = #{PINYIN},
+				IS_PLACE_TOP =#{IS_PLACE_TOP},
+				SORT_LEVEL =#{SORT_LEVEL}
+			<if test="PASSWORD != null and PASSWORD != ''">
+				,PASSWORD				= #{PASSWORD}
+			</if>
+			where 
+				USER_ID = #{USER_ID}
+	</update>
+	
+	<update id="editUPo" parameterType="com.fh.entity.system.User" >
+		update  <include refid="tableName"></include>
+			set NAME 					= #{NAME},
+				ROLE_ID 				= #{ROLE_ID},
+				BZ						= #{BZ},
+				EMAIL					= #{EMAIL},
+				NUMBER					= #{NUMBER},
+				PHONE					= #{PHONE},
+				CITY = #{CITY},
+				FAX = #{FAX},
+				SEX = #{SEX},
+				BIRTHDAY = #{BIRTHDAY},
+				ID_CARD = #{ID_CARD},
+				HEAD_PATH = #{HEAD_PATH},
+				JOB_STATE = #{JOB_STATE},
+				TEL = #{TEL},
+				WEIXIN = #{WEIXIN},
+				ADDRESS = #{ADDRESS},
+				DEPARTMENT_ID = #{DEPARTMENT_ID},
+				POST_ID = #{POST_ID},
+				COMPANY_ID = #{COMPANY_ID},
+				UPDATE_TIME = #{UPDATE_TIME},
+				USERID = #{USERID},
+				PINYIN = #{PINYIN},
+				IS_PLACE_TOP =#{IS_PLACE_TOP},
+				SORT_LEVEL =#{SORT_LEVEL}
+			<if test="HEAD_PIN_YIN != null and HEAD_PIN_YIN != ''">	
+			    ,HEAD_PIN_YIN =#{HEAD_PIN_YIN}  
+			</if>
+			<if test="PASSWORD != null and PASSWORD != ''">
+				,PASSWORD				= #{PASSWORD}
+			</if>
+			where 
+				USER_ID = #{USER_ID}
+	</update>
+	
+	<!-- 删除用户 -->
+	<delete id="deleteU" parameterType="pd" flushCache="false">
+		delete from <include refid="tableName"></include>
+		where 
+			USER_ID = #{USER_ID}
+		and 
+				USER_ID != '1'
+	</delete>
+	
+	<!-- 批量删除用户 -->
+	<delete id="deleteAllU" parameterType="String" >
+		delete from <include refid="tableName"></include>
+		where 
+			USER_ID in
+  			 <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                  #{item}
+             </foreach>
+            and 
+				USER_ID != '1'
+	</delete>
+	
+	<!-- 用户列表(全部) -->
+	<select id="listAllUser" parameterType="pd" resultType="pd" >
+		select  u.USER_ID,
+				u.USERNAME,
+				u.PASSWORD,
+				u.LAST_LOGIN,
+				u.NAME,
+				u.IP,
+				u.EMAIL,
+				u.NUMBER,
+				u.PHONE,
+				r.ROLE_ID,
+				r.ROLE_NAME
+		from <include refid="tableName"></include> u, <include refid="roleTableName"></include> r 
+		where u.ROLE_ID = r.ROLE_ID 
+		and u.USERNAME != 'admin'
+		and r.PARENT_ID = '1'
+		<if test="keywords!= null and keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					 u.USERNAME LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+					 or 
+					 u.EMAIL LIKE CONCAT(CONCAT('%', #{keywords}),'%') 
+					 or
+					 u.NUMBER LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+					 or
+					 u.NAME LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+					 or
+					 u.PHONE LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+				)
+		</if>
+		<if test="ROLE_ID != null and ROLE_ID != ''"><!-- 角色检索 -->
+			and u.ROLE_ID=#{ROLE_ID} 
+		</if>
+		<if test="lastLoginStart!=null and lastLoginStart!=''"><!-- 登录时间检索 -->
+			and u.LAST_LOGIN &gt;= #{lastLoginStart} 
+		</if>
+		<if test="lastLoginEnd!=null and lastLoginEnd!=''"><!-- 登录时间检索 -->
+			and u.LAST_LOGIN &lt;= #{lastLoginEnd} 
+		</if>
+		order by u.LAST_LOGIN desc
+	</select>
+	
+	<!-- 获取总数 -->
+	<select id="getUserCount" parameterType="String" resultType="pd">
+		select 
+			count(USER_ID) userCount
+		from 
+		<include refid="tableName"></include>
+	</select>
+	
+	<select id="getUserPositionListByUserId" parameterType="pd" resultType="pd">
+		select cdp.POST_ID,cdp.USER_ID,cdp.POSITION_NAME
+		      from oa_companydepartmentpostuser cdp 
+         where cdp.USER_ID =#{USER_ID}
+		
+	</select>
+	
+	<select id="findUserByLikeUserName" parameterType="pd" resultType="pd">
+		SELECT <include refid="Field"></include>,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.POST_ID) AS POST_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.DEPARTMENT_ID) AS DEPARTMENT_NAME,
+		(select NAME from oa_department d where d.DEPARTMENT_ID = u.COMPANY_ID) AS COMPANY_NAME
+			 from sys_user u
+			 <where>
+				<if test="USERNAME!=null and USERNAME!=''">
+				  and (NAME like '%${USERNAME}%' OR PINYIN like '%${USERNAME}%' OR USERNAME like '%${USERNAME}%')
+				</if>
+             </where>
+		 order by HEAD_PIN_YIN asc 
+	</select>
+	
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>

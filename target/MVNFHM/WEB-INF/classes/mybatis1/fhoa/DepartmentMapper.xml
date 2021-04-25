@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DepartmentMapper">
+	
+	<resultMap type="Department" id="departmentResultMap">
+		<id column="DEPARTMENT_ID" property="DEPARTMENT_ID"/>
+		<result column="NAME" property="NAME"/>
+		<result column="PARENT_ID" property="PARENT_ID"/>
+	</resultMap>
+	
+	<!--表名 -->
+	<sql id="tableName">
+		OA_DEPARTMENT
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		NAME,	
+		NAME_EN,	
+		BIANMA,	
+		PARENT_ID,
+		PARENT_NAME,
+		HEADMAN,
+		TEL,
+		FUNCTIONS,
+		ADDRESS,
+		BZ,	
+		TYPE,
+		FAX,
+		PHONE,
+		EMAIL,
+		WEBSITE,
+		INTRODUCE,
+		GRADE,
+		CREATE_TIME,
+		UPDATE_TIME,
+		USER_ID,
+		IS_VALUE,
+		IS_STATE,
+		DEPARTMENT_ID
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{NAME},	
+		#{NAME_EN},	
+		#{BIANMA},	
+		#{PARENT_ID},
+		#{PARENT_NAME},
+		#{HEADMAN},
+		#{TEL},
+		#{FUNCTIONS},
+		#{ADDRESS},
+		#{BZ},	
+		#{TYPE},
+		#{FAX},
+		#{PHONE},
+		#{EMAIL},
+		#{WEBSITE},
+		#{INTRODUCE},
+		#{GRADE},
+		#{CREATE_TIME},
+		#{UPDATE_TIME},
+		#{USER_ID},
+		#{IS_VALUE},
+		#{IS_STATE},
+		#{DEPARTMENT_ID}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		update <include refid="tableName"></include>
+			set IS_VALUE = 1
+				where DEPARTMENT_ID = #{DEPARTMENT_ID}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+			NAME = #{NAME},
+			NAME_EN = #{NAME_EN},
+			HEADMAN = #{HEADMAN},
+			PARENT_NAME = #{PARENT_NAME},
+			BZ = #{BZ},
+			TEL = #{TEL},
+			FUNCTIONS = #{FUNCTIONS},
+			ADDRESS = #{ADDRESS},
+			TYPE  = #{TYPE},
+			FAX = #{FAX},
+			PHONE = #{PHONE},
+			EMAIL = #{EMAIL},
+			WEBSITE = #{WEBSITE},
+			INTRODUCE = #{INTRODUCE},
+			GRADE = #{GRADE},
+			UPDATE_TIME = #{UPDATE_TIME},
+			USER_ID = #{USER_ID},
+			IS_STATE = #{IS_STATE},
+			DEPARTMENT_ID = DEPARTMENT_ID
+		where 
+		DEPARTMENT_ID = #{DEPARTMENT_ID}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>,(select u.USERNAME from sys_user u where u.USER_ID = HEADMAN) AS HEADMANNAME
+		from 
+		<include refid="tableName"></include>
+		where 
+			DEPARTMENT_ID = #{DEPARTMENT_ID}
+	</select>
+	
+	<select id="findParentDepartmentById" parameterType="String" resultType="String">
+		select getDepParentList(#{DEPARTMENT_ID}) from dual
+	</select>
+	
+	<select id="findCompanyByParentDeparementIds" parameterType="pd" resultType="pd">
+		select * from oa_department where DEPARTMENT_ID IN (${parentDeparementIds}) AND TYPE = 'DT001001'
+		AND PARENT_ID !='0'
+	</select>
+	
+	<select id="findDepartmentByParentDeparementIds" parameterType="pd" resultType="pd">
+		select * from oa_department where DEPARTMENT_ID IN (${parentDeparementIds}) AND TYPE = 'DT001002'
+	</select>
+	
+	<select id="findChildrenDepartmentById" parameterType="pd" resultType="pd">
+		select * from oa_department where PARENT_ID = #{DEPARTMENT_ID}  ORDER BY BIANMA 
+	</select>
+	
+	<select id="findDepartmentTypeByIdLikeName" parameterType="pd" resultType="pd">
+		select TYPE from oa_department where DEPARTMENT_ID = #{DEPARTMENT_ID} 		
+	</select>
+	
+	<!-- 通过编码获取数据 -->
+	<select id="findByBianma" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+		    
+			BIANMA = #{BIANMA}
+			AND IS_VALUE != 1
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+		<include refid="Field"></include>,(select u.USERNAME from sys_user u where u.USER_ID = HEADMAN) AS HEADMANNAME
+		from 
+		<include refid="tableName"></include>
+		where
+			IS_VALUE != 1
+		<if test="pd.DEPARTMENT_ID!= null and pd.DEPARTMENT_ID != ''"><!-- 检索 -->
+		and PARENT_ID = #{pd.DEPARTMENT_ID}
+		</if>
+		<if test="pd.keywords != null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+				 NAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				 or 
+				 NAME_EN LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') 
+				 or
+				 BIANMA LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+		order by BIANMA ASC,NAME ASC
+	</select>
+	
+	<!-- 通过ID获取其子级列表 -->
+	<select id="listSubDepartmentByParentId" parameterType="String" resultMap="departmentResultMap">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			PARENT_ID = #{parentId} 
+			AND IS_VALUE != 1
+				order by BIANMA ASC,NAME ASC
+	</select>
+	
+	<select id="findDepartmentDetailByName" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+		   IS_VALUE !=1 AND 
+			NAME = #{NAME}
+	     LIMIT 1
+	</select>
+	
+	<select id="findDepartmentDetailByNameAndParentName" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+		   IS_VALUE !=1 AND 
+			NAME = #{NAME}
+		<if test="PARENT_NAME != null">
+		    AND PARENT_NAME = #{PARENT_NAME}
+		</if>	
+	     LIMIT 1
+	</select>
+	
+	<select id="findCompanyList" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+		   IS_VALUE !=1 
+		   AND TYPE ='DT001001'
+		   AND BIANMA != #{BIANMA}
+		    AND PARENT_NAME is not null
+	</select>
+	
+	
+	<select id="findHighestDepartmentDetail" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+		   IS_VALUE !=1 
+		    AND BIANMA = #{BIANMA}
+	</select>
+	
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>
